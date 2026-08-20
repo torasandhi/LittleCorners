@@ -4,36 +4,45 @@ using UnityEngine;
 public class DraggableObject : MonoBehaviour
 {
     private Camera cam;
-    private Vector3 offset;
-    
+    private Rigidbody rb;
+    private bool isSelected;
     private bool isDragging;
-    private bool isSelected; 
+    private bool hasBeenPlaced;
+    private Vector3 originalPosition;
+    private Vector3 targetPosition;
+    private Vector3 offset;
 
     public string targetZoneTag = "DropZone";
     public string ObjectInfo = "Triangle";
     private Transform validZone;
 
     public LayerMask draggableLayer = ~0;
+    public LayerMask environmentLayer = ~0;
+    
     public float raycastMaxDistance = 100f;
+    public float liftHeight = 1f;
+    public float dragSpeed = 15f; 
 
-    [Header("Wall Collision")]
-    public LayerMask wallLayer;
-    public float collisionRadius = 0.4f;
-    public float wallSkinWidth = 0.05f;
+    // CHANGED: Added variable for snap tolerance
+    public float snapDistance = 1.5f; 
 
     private Renderer objRenderer;
     public Color defaultColor = Color.white;
     public Color glowColor = new Color(1f, 1f, 0.5f, 1f);
-    
     public Color selectedColor = new Color(0.8f, 0.8f, 1f, 1f);
 
-    private Plane dragPlane;
     public static event Action<DraggableObject> OnItemSelected;
-    private Vector3 originalPosition;
 
     private void Awake()
     {
         cam = Camera.main;
+        rb = GetComponent<Rigidbody>();
+        
+        if (rb != null)
+        {
+            rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
+        }
+
         objRenderer = GetComponent<Renderer>();
         if (objRenderer != null) objRenderer.material.color = defaultColor;
     }
@@ -53,12 +62,30 @@ public class DraggableObject : MonoBehaviour
 
         if (Input.GetMouseButton(0) && isDragging)
         {
-            DoDrag();
+            UpdateTargetPosition();
         }
 
         if (Input.GetMouseButtonUp(0) && isDragging)
         {
             TryDrop();
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (isDragging && rb != null)
+        {
+            Vector3 newPos = Vector3.Lerp(rb.position, targetPosition, Time.fixedDeltaTime * dragSpeed);
+            rb.MovePosition(newPos);
+
+            if (validZone != null)
+            {
+                rb.MoveRotation(Quaternion.Lerp(rb.rotation, validZone.rotation, Time.fixedDeltaTime * dragSpeed));
+                
+                // CHANGED: Kills lingering physics velocities to prevent jittering against colliders
+                rb.linearVelocity = Vector3.zero;
+                rb.angularVelocity = Vector3.zero;
+            }
         }
     }
 
@@ -73,45 +100,47 @@ public class DraggableObject : MonoBehaviour
         isDragging = true;
         originalPosition = transform.position;
 
-        dragPlane = new Plane(Vector3.up, transform.position);
-
-        if (dragPlane.Raycast(ray, out float enter))
+        if (rb != null)
         {
-            Vector3 hitPoint = ray.GetPoint(enter);
-            offset = transform.position - hitPoint;
+            rb.isKinematic = false;
+            rb.useGravity = false;
         }
+
+        if (Physics.Raycast(ray, out RaycastHit envHit, raycastMaxDistance, environmentLayer))
+        {
+            offset = transform.position - envHit.point;
+        }
+        else
+        {
+            offset = Vector3.zero;
+        }
+
+        targetPosition = transform.position + (Vector3.up * liftHeight);
 
         if (objRenderer != null) objRenderer.material.color = selectedColor;
         OnItemSelected?.Invoke(this);
     }
 
-    private void DoDrag()
+    private void UpdateTargetPosition()
     {
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
 
-        if (!dragPlane.Raycast(ray, out float enter))
-            return;
-
-        Vector3 targetPosition = ray.GetPoint(enter) + offset;
-        transform.position = GetWallClampedPosition(transform.position, targetPosition);
-    }
-
-    private Vector3 GetWallClampedPosition(Vector3 current, Vector3 target)
-    {
-        Vector3 delta = target - current;
-        float distance = delta.magnitude;
-
-        if (distance < 0.0001f) return current;
-
-        Vector3 direction = delta / distance;
-
-        if (Physics.SphereCast(current, collisionRadius, direction, out RaycastHit hit, distance, wallLayer))
+        if (Physics.Raycast(ray, out RaycastHit hit, raycastMaxDistance, environmentLayer))
         {
-            float safeDistance = Mathf.Max(hit.distance - wallSkinWidth, 0f);
-            return current + direction * safeDistance;
-        }
+            targetPosition = hit.point + offset + (Vector3.up * liftHeight);
 
-        return target;
+            // CHANGED: Snaps only when the mouse is within snapDistance, allowing you to pull it away smoothly and preventing traps
+            if (validZone != null)
+            {
+                Vector3 hitXZ = new Vector3(hit.point.x, 0f, hit.point.z);
+                Vector3 zoneXZ = new Vector3(validZone.position.x, 0f, validZone.position.z);
+
+                if (Vector3.Distance(hitXZ, zoneXZ) <= snapDistance)
+                {
+                    targetPosition = validZone.position + (Vector3.up * liftHeight);
+                }
+            }
+        }
     }
 
     private void TryDrop()
@@ -122,16 +151,35 @@ public class DraggableObject : MonoBehaviour
         if (isValidPlacement)
         {
             transform.position = validZone.position;
+            transform.rotation = validZone.rotation;
+            
             if (objRenderer != null) objRenderer.material.color = defaultColor;
+            
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+                rb.useGravity = false;
+            }
 
-            GameManager.Instance.ItemPlaced();
+            if (!hasBeenPlaced)
+            {
+                GameManager.Instance.ItemPlaced();
+                hasBeenPlaced = true;
+            }
+
             OnItemSelected?.Invoke(null);
-            Destroy(this);
         }
         else
         {
-            transform.position = originalPosition;
-            if (objRenderer != null) objRenderer.material.color = selectedColor; 
+            isSelected = false;
+            if (objRenderer != null) objRenderer.material.color = defaultColor; 
+            OnItemSelected?.Invoke(null);
+
+            if (rb != null)
+            {
+                rb.isKinematic = false;
+                rb.useGravity = true;
+            }
         }
     }
 
@@ -143,6 +191,12 @@ public class DraggableObject : MonoBehaviour
         
         if (objRenderer != null) objRenderer.material.color = defaultColor;
         OnItemSelected?.Invoke(null);
+
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.useGravity = true;
+        }
     }
 
     private void OnTriggerEnter(Collider other)
@@ -166,7 +220,6 @@ public class DraggableObject : MonoBehaviour
         if (dropZoneObj.GetZoneInfo() != ObjectInfo) return;
 
         validZone = null;
-        
         if (objRenderer != null) objRenderer.material.color = isSelected ? selectedColor : defaultColor;
     }
 }
