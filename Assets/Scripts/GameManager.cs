@@ -26,6 +26,7 @@ public class GameManager : MonoBehaviour
         if (Instance == null) Instance = this;
         
         allDropZones.AddRange(FindObjectsByType<DropZone>(FindObjectsSortMode.None));
+        CurrentScore = 0;
         LoadBestScore();
     }
 

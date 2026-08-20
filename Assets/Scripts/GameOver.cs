@@ -3,6 +3,8 @@ using UnityEngine.SceneManagement;
 
 public class GameOver : MonoBehaviour
 {
+    [SerializeField] private string MainMenuSceneName = "MainMenu";
+    
     public void Retry()
     {
         SceneManager.LoadScene(GameManager.Instance.GetCurrentLevelIndex());
@@ -10,6 +12,6 @@ public class GameOver : MonoBehaviour
 
     public void MainMenu()
     {
-        SceneManager.LoadScene(0);
+        SceneManager.LoadScene(MainMenuSceneName);
     }
 }

@@ -2590,7 +2590,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b4160e4c1f195d44fbf576a87f203f09, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  masterSlider: {fileID: 1992365166}
+  VolumeSlider: {fileID: 0}
 --- !u!1 &1900430362
 GameObject:
   m_ObjectHideFlags: 0
