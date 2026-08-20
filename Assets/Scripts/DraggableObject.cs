@@ -18,13 +18,11 @@ public class DraggableObject : MonoBehaviour
 
     public LayerMask draggableLayer = ~0;
     public LayerMask environmentLayer = ~0;
-    
+
     public float raycastMaxDistance = 100f;
     public float liftHeight = 1f;
-    public float dragSpeed = 15f; 
-
-    // CHANGED: Added variable for snap tolerance
-    public float snapDistance = 1.5f; 
+    public float dragSpeed = 15f;
+    public float snapDistance = 1.5f;
 
     private Renderer objRenderer;
     public Color defaultColor = Color.white;
@@ -33,11 +31,32 @@ public class DraggableObject : MonoBehaviour
 
     public static event Action<DraggableObject> OnItemSelected;
 
+    // Changed: Added lifecycle methods to listen for when other objects are selected
+    private void OnEnable()
+    {
+        OnItemSelected += HandleNewSelection;
+    }
+
+    // Changed: Remove listener when disabled
+    private void OnDisable()
+    {
+        OnItemSelected -= HandleNewSelection;
+    }
+
+    // Changed: Automatically deselect this object if the player selects a different one
+    private void HandleNewSelection(DraggableObject newlySelected)
+    {
+        if (newlySelected != this && isSelected)
+        {
+            CancelSelection(false);
+        }
+    }
+
     private void Awake()
     {
         cam = Camera.main;
         rb = GetComponent<Rigidbody>();
-        
+
         if (rb != null)
         {
             rb.collisionDetectionMode = CollisionDetectionMode.Continuous;
@@ -51,7 +70,8 @@ public class DraggableObject : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(1) && isSelected)
         {
-            CancelSelection();
+            // Changed: Explicitly tell the method to broadcast the null selection to the UI
+            CancelSelection(true);
             return;
         }
 
@@ -81,8 +101,7 @@ public class DraggableObject : MonoBehaviour
             if (validZone != null)
             {
                 rb.MoveRotation(Quaternion.Lerp(rb.rotation, validZone.rotation, Time.fixedDeltaTime * dragSpeed));
-                
-                // CHANGED: Kills lingering physics velocities to prevent jittering against colliders
+
                 rb.linearVelocity = Vector3.zero;
                 rb.angularVelocity = Vector3.zero;
             }
@@ -129,7 +148,6 @@ public class DraggableObject : MonoBehaviour
         {
             targetPosition = hit.point + offset + (Vector3.up * liftHeight);
 
-            // CHANGED: Snaps only when the mouse is within snapDistance, allowing you to pull it away smoothly and preventing traps
             if (validZone != null)
             {
                 Vector3 hitXZ = new Vector3(hit.point.x, 0f, hit.point.z);
@@ -150,11 +168,14 @@ public class DraggableObject : MonoBehaviour
 
         if (isValidPlacement)
         {
+            // CHANGED: Properly deselect the item after a successful drop
+            isSelected = false;
+
             transform.position = validZone.position;
             transform.rotation = validZone.rotation;
-            
+
             if (objRenderer != null) objRenderer.material.color = defaultColor;
-            
+
             if (rb != null)
             {
                 rb.isKinematic = true;
@@ -171,9 +192,7 @@ public class DraggableObject : MonoBehaviour
         }
         else
         {
-            isSelected = false;
-            if (objRenderer != null) objRenderer.material.color = defaultColor; 
-            OnItemSelected?.Invoke(null);
+            if (objRenderer != null) objRenderer.material.color = selectedColor;
 
             if (rb != null)
             {
@@ -183,14 +202,20 @@ public class DraggableObject : MonoBehaviour
         }
     }
 
-    private void CancelSelection()
+    // Changed: Added a 'broadcast' parameter so we don't accidentally hide the UI when switching items
+    private void CancelSelection(bool broadcast = true)
     {
         isSelected = false;
         isDragging = false;
         transform.position = originalPosition;
-        
+
         if (objRenderer != null) objRenderer.material.color = defaultColor;
-        OnItemSelected?.Invoke(null);
+
+        // Changed: Only broadcast if requested
+        if (broadcast)
+        {
+            OnItemSelected?.Invoke(null);
+        }
 
         if (rb != null)
         {
