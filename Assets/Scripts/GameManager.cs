@@ -8,6 +8,10 @@ public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
 
+    private int BestScore, CurrentScore;
+
+    private int CurrentLevelIndex;
+    
     public int totalItemsToPlace;
     private int itemsPlaced = 0;
 
@@ -22,6 +26,7 @@ public class GameManager : MonoBehaviour
         if (Instance == null) Instance = this;
         
         allDropZones.AddRange(FindObjectsByType<DropZone>(FindObjectsSortMode.None));
+        LoadBestScore();
     }
 
     private void Start()
@@ -43,6 +48,7 @@ public class GameManager : MonoBehaviour
             
             if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
             {
+                CurrentLevelIndex = nextSceneIndex;
                 SceneManager.LoadScene(nextSceneIndex);
             }
             else
@@ -50,5 +56,33 @@ public class GameManager : MonoBehaviour
                 SceneManager.LoadScene(0);
             }
         }
+    }
+    
+    public void AddCurretScore()
+    {
+        CurrentScore++;
+        if (CurrentScore < BestScore) return;
+        PlayerPrefs.SetInt("BestScore", CurrentScore);
+        PlayerPrefs.Save();
+    }
+
+    private void LoadBestScore()
+    {
+        BestScore = PlayerPrefs.GetInt("BestScore", 0);
+    }
+
+    public int GetBestScore()
+    {
+        return BestScore;
+    }
+    
+    public int GetCurretScore()
+    {
+        return CurrentScore;
+    }
+
+    public int GetCurrentLevelIndex()
+    {
+        return CurrentLevelIndex;
     }
 }
