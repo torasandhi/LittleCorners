@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+[DefaultExecutionOrder(-1)]
 public class GameManager : MonoBehaviour
 {
     public static GameManager Instance;
@@ -10,14 +13,27 @@ public class GameManager : MonoBehaviour
 
     public string mainMenuSceneName = "MainMenu";
 
+    public event Action<int, int> OnProgressUpdated;
+
+    [HideInInspector] public List<DropZone> allDropZones = new List<DropZone>();
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
+        
+        allDropZones.AddRange(FindObjectsByType<DropZone>(FindObjectsSortMode.None));
+    }
+
+    private void Start()
+    {
+        OnProgressUpdated?.Invoke(itemsPlaced, totalItemsToPlace);
     }
 
     public void ItemPlaced()
     {
         itemsPlaced++;
+        
+        OnProgressUpdated?.Invoke(itemsPlaced, totalItemsToPlace);
 
         if (itemsPlaced >= totalItemsToPlace)
         {
@@ -33,7 +49,6 @@ public class GameManager : MonoBehaviour
             {
                 SceneManager.LoadScene(0);
             }
-            
         }
     }
 }
