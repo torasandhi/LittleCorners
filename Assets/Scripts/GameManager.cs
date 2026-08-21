@@ -11,8 +11,8 @@ public class GameManager : MonoBehaviour
     private int BestScore, CurrentScore;
 
     private int CurrentLevelIndex;
-    
-    public int totalItemsToPlace;
+
+    public int totalItemsToPlace = 2;
     private int itemsPlaced = 0;
 
     public string mainMenuSceneName = "MainMenu";
@@ -24,7 +24,7 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         if (Instance == null) Instance = this;
-        
+
         allDropZones.AddRange(FindObjectsByType<DropZone>(FindObjectsSortMode.None));
         CurrentScore = 0;
         LoadBestScore();
@@ -38,15 +38,18 @@ public class GameManager : MonoBehaviour
     public void ItemPlaced()
     {
         itemsPlaced++;
-        
+
         OnProgressUpdated?.Invoke(itemsPlaced, totalItemsToPlace);
 
         if (itemsPlaced >= totalItemsToPlace)
         {
             Debug.Log("Room Complete! Loading Next Chapter...");
-            
+
             int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
-            
+            totalItemsToPlace += 2;
+            itemsPlaced = 0;
+
+
             if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
             {
                 CurrentLevelIndex = nextSceneIndex;
@@ -58,7 +61,7 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-    
+
     public void AddCurretScore()
     {
         CurrentScore++;
@@ -76,7 +79,7 @@ public class GameManager : MonoBehaviour
     {
         return BestScore;
     }
-    
+
     public int GetCurretScore()
     {
         return CurrentScore;
