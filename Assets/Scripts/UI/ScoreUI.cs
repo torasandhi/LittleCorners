@@ -10,7 +10,7 @@ public class ScoreUI : MonoBehaviour
     private void Start()
     {
         if (CurrentScoreText == null || BestScoreText == null) return;
-        
+
         CurrentScoreText.text = "CurrentScore: " + GameManager.Instance.GetCurretScore();
         BestScoreText.text = "BestScore: " + GameManager.Instance.GetBestScore();
     }

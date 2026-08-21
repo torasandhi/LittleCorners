@@ -7,8 +7,7 @@ public class GameOver : MonoBehaviour
     
     public void Retry()
     {
-        SceneManager.LoadScene(GameManager.Instance.GetCurrentLevelIndex());
-    }
+        SceneManager.LoadScene("Level 1");    }
 
     public void MainMenu()
     {
