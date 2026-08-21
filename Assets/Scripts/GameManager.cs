@@ -26,6 +26,7 @@ public class GameManager : MonoBehaviour
         if (Instance == null) Instance = this;
 
         allDropZones.AddRange(FindObjectsByType<DropZone>(FindObjectsSortMode.None));
+        DontDestroyOnLoad(gameObject);
         CurrentScore = 0;
         LoadBestScore();
     }
@@ -88,5 +89,10 @@ public class GameManager : MonoBehaviour
     public int GetCurrentLevelIndex()
     {
         return CurrentLevelIndex;
+    }
+    
+    public void BroadcastProgressUpdate()
+    {
+        OnProgressUpdated?.Invoke(itemsPlaced, totalItemsToPlace);
     }
 }

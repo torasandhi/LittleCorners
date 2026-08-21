@@ -64,6 +64,7 @@ public class DraggableObject : MonoBehaviour
 
         objRenderer = GetComponent<Renderer>();
         if (objRenderer != null) objRenderer.material.color = defaultColor;
+        GameManager.Instance.BroadcastProgressUpdate();
     }
 
     private void Update()

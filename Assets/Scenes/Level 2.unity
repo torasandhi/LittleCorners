@@ -1382,6 +1382,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ProgressUI
       objectReference: {fileID: 0}
+    - target: {fileID: 4934276260830225512, guid: c0af6ba053c17fa4ba7ff38b306c857c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 100
+      objectReference: {fileID: 0}
     - target: {fileID: 6231443624701183473, guid: c0af6ba053c17fa4ba7ff38b306c857c, type: 3}
       propertyPath: m_Pivot.x
       value: 0
