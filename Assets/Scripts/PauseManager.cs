@@ -50,6 +50,7 @@ public class PauseManager : MonoBehaviour
     {
         Time.timeScale = 1f;
         IsGamePaused = false;
+        GameManager.Instance.ResetScore();
         SceneManager.LoadScene(MainMenuSceneName);
     }
 }

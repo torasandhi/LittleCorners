@@ -108,7 +108,7 @@ public class GameManager : MonoBehaviour
             {
                 CurrentLevelIndex = nextSceneIndex;
 
-                // Reset timer for the next level
+                // ' timer for the next level
                 CurrentTime = LevelTime;
                 isTimerRunning = true;
 
@@ -188,5 +188,11 @@ public class GameManager : MonoBehaviour
     public void BroadcastProgressUpdate()
     {
         OnProgressUpdated?.Invoke(itemsPlaced, totalItemsToPlace);
+    }
+
+    public void ResetScore()
+    {
+        CurrentScore = 0;   
+        Debug.LogWarning("Alamak");
     }
 }
