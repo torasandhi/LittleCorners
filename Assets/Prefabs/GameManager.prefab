@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5041337033132797123}
   - component: {fileID: 6620244771926861520}
+  - component: {fileID: 8105000001}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -46,3 +47,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   totalItemsToPlace: 10
   mainMenuSceneName: MainMenu
+--- !u!114 &8105000001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6149751921214488238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e8c1c4b2dbb4bbca6c9eadc4fa3db11, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levelImages:
+  - {fileID: 21300000, guid: b96185f6704dc914d9c742e961d6501e, type: 3}
+  - {fileID: 21300000, guid: c5756b6778cd5bb4baf6e3bc101188d3, type: 3}
+  - {fileID: 21300000, guid: 37aad33446fc52744baec4409d614788, type: 3}
+  zoomOutAmount: 1.5
+  zoomDuration: 0.65
+  panelDuration: 0.35
+  imageFadeDuration: 0.65

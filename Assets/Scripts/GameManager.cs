@@ -13,6 +13,8 @@ public class GameManager : MonoBehaviour
     private bool isCompletingLevel;
 
     private int CurrentLevelIndex;
+    private int pendingNextSceneIndex = -1;
+    private LevelCompleteUI levelCompleteUI;
 
     public int totalItemsToPlace = 2;
     private int itemsPlaced = 0;
@@ -33,6 +35,7 @@ public class GameManager : MonoBehaviour
         }
 
         Instance = this;
+        levelCompleteUI = GetComponent<LevelCompleteUI>();
 
         allDropZones.AddRange(
             FindObjectsByType<DropZone>(FindObjectsSortMode.None)
@@ -61,7 +64,9 @@ public class GameManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        levelCompleteUI?.HideImmediately();
         isCompletingLevel = false;
+        pendingNextSceneIndex = -1;
         itemsPlaced = 0;
         CurrentLevelIndex = scene.buildIndex;
 
@@ -104,17 +109,47 @@ public class GameManager : MonoBehaviour
 
         Debug.Log($"Room Complete! Saved progress for {completedScene.name}.");
 
-        int nextSceneIndex = completedScene.buildIndex + 1;
+        pendingNextSceneIndex = completedScene.buildIndex + 1;
 
-        if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
+        if (levelCompleteUI != null)
         {
-            CurrentLevelIndex = nextSceneIndex;
-            SceneManager.LoadScene(nextSceneIndex);
+            levelCompleteUI.Show(completedScene.buildIndex);
         }
         else
         {
-            SceneManager.LoadScene(0);
+            ContinueToNextLevel();
         }
+    }
+
+    public void ContinueToNextLevel()
+    {
+        if (!isCompletingLevel)
+            return;
+
+        Time.timeScale = 1f;
+        levelCompleteUI?.HideImmediately();
+
+        if (pendingNextSceneIndex >= 0 &&
+            pendingNextSceneIndex < SceneManager.sceneCountInBuildSettings)
+        {
+            CurrentLevelIndex = pendingNextSceneIndex;
+            SceneManager.LoadScene(pendingNextSceneIndex);
+        }
+        else
+        {
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
+    }
+
+    public void ReturnToMainMenu()
+    {
+        if (!isCompletingLevel)
+            return;
+
+        Time.timeScale = 1f;
+        levelCompleteUI?.HideImmediately();
+        ResetScore();
+        SceneManager.LoadScene(mainMenuSceneName);
     }
 
     public void AddCurretScore()
