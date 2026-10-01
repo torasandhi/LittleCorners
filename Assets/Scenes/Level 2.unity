@@ -1494,7 +1494,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 308782020948699545, guid: c0af6ba053c17fa4ba7ff38b306c857c, type: 3}
       propertyPath: m_Color.a
-      value: 0
+      value: 0.85
       objectReference: {fileID: 0}
     - target: {fileID: 809819974356673489, guid: c0af6ba053c17fa4ba7ff38b306c857c, type: 3}
       propertyPath: m_fontAsset
