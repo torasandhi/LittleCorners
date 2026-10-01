@@ -10,8 +10,7 @@ public class GameManager : MonoBehaviour
 
     private int BestScore, CurrentScore;
 
-    private float CurrentTime;
-    private bool isTimerRunning;
+    private bool isCompletingLevel;
 
     private int CurrentLevelIndex;
 
@@ -25,12 +24,15 @@ public class GameManager : MonoBehaviour
     [HideInInspector]
     public List<DropZone> allDropZones = new List<DropZone>();
 
-    private const float LevelTime = 60f;
-
     private void Awake()
     {
-        if (Instance == null)
-            Instance = this;
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
 
         allDropZones.AddRange(
             FindObjectsByType<DropZone>(FindObjectsSortMode.None)
@@ -39,15 +41,11 @@ public class GameManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
 
         CurrentScore = 0;
-        CurrentTime = LevelTime;
-
         LoadBestScore();
     }
 
     private void Start()
     {
-        StartLevelTimer();
-
         OnProgressUpdated?.Invoke(itemsPlaced, totalItemsToPlace);
     }
     
@@ -63,33 +61,29 @@ public class GameManager : MonoBehaviour
 
     private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
     {
+        isCompletingLevel = false;
+        itemsPlaced = 0;
+        CurrentLevelIndex = scene.buildIndex;
+
         allDropZones.Clear();
 
         allDropZones.AddRange(
             FindObjectsByType<DropZone>(FindObjectsSortMode.None)
         );
+
+        // Each level has one drop zone per item. Recalculate the target from the
+        // loaded scene so replaying Level 1 cannot inherit Level 2's item count.
+        if (allDropZones.Count > 0)
+            totalItemsToPlace = allDropZones.Count;
+
+        OnProgressUpdated?.Invoke(itemsPlaced, totalItemsToPlace);
     }
 
-    private void Update()
-    {
-        if (!isTimerRunning)
-            return;
-
-        CurrentTime -= Time.deltaTime;
-
-        if (CurrentTime <= 0f)
-        {
-            CurrentTime = 0f;
-            isTimerRunning = false;
-
-            Debug.Log("Time's Up! Game Over.");
-
-            SceneManager.LoadScene("GameOver");
-        }
-    }
-    
     public void ItemPlaced()
     {
+        if (isCompletingLevel)
+            return;
+
         itemsPlaced++;
         AddCurretScore();
 
@@ -97,28 +91,29 @@ public class GameManager : MonoBehaviour
 
         if (itemsPlaced >= totalItemsToPlace)
         {
-            Debug.Log("Room Complete! Loading Next Chapter...");
+            CompleteLevel();
+        }
+    }
 
-            int nextSceneIndex = SceneManager.GetActiveScene().buildIndex + 1;
+    private void CompleteLevel()
+    {
+        isCompletingLevel = true;
 
-            totalItemsToPlace += 2;
-            itemsPlaced = 0;
+        Scene completedScene = SceneManager.GetActiveScene();
+        LevelProgress.MarkCleared(completedScene.buildIndex);
 
-            if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
-            {
-                CurrentLevelIndex = nextSceneIndex;
+        Debug.Log($"Room Complete! Saved progress for {completedScene.name}.");
 
-                // ' timer for the next level
-                CurrentTime = LevelTime;
-                isTimerRunning = true;
+        int nextSceneIndex = completedScene.buildIndex + 1;
 
-                SceneManager.LoadScene(nextSceneIndex);
-            }
-            else
-            {
-                StopTimer();
-                SceneManager.LoadScene(0);
-            }
+        if (nextSceneIndex < SceneManager.sceneCountInBuildSettings)
+        {
+            CurrentLevelIndex = nextSceneIndex;
+            SceneManager.LoadScene(nextSceneIndex);
+        }
+        else
+        {
+            SceneManager.LoadScene(0);
         }
     }
 
@@ -151,34 +146,6 @@ public class GameManager : MonoBehaviour
     public int GetCurrentLevelIndex()
     {
         return CurrentLevelIndex;
-    }
-
-    // =========================
-    // TIMER
-    // =========================
-
-    public float GetCurrentTime()
-    {
-        return CurrentTime;
-    }
-
-    public string GetFormattedCurrentTime()
-    {
-        int minutes = Mathf.FloorToInt(CurrentTime / 60f);
-        int seconds = Mathf.FloorToInt(CurrentTime % 60f);
-
-        return $"{minutes:00}:{seconds:00}";
-    }
-
-    public void StartLevelTimer()
-    {
-        CurrentTime = LevelTime;
-        isTimerRunning = true;
-    }
-
-    public void StopTimer()
-    {
-        isTimerRunning = false;
     }
 
     // =========================
